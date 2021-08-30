@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export default axios.create({
-  baseURL: 'http://sertaorural.herokuapp.com',
+  baseURL: process.env.REACT_APP_API_URL,
   //baseURL: 'http://localhost:3001'
 });
 
