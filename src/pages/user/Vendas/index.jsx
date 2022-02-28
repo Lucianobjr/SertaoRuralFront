@@ -2,8 +2,10 @@
 import StatusCard from "components/StatusCard";
 import TableCard from "components/TableCard";
 
+import "date-fns";
+
 import React, { useEffect, useState } from "react";
-import { getVendas, postVenda } from "./services";
+import { getVendas, postVenda, EditVenda, deleteVenda } from "./services";
 import constantes from "constantes";
 
 import DeleteIcon from "@material-ui/icons/Delete";
@@ -33,6 +35,21 @@ import SaveIcon from "@material-ui/icons/Save";
 import moment from "moment";
 import "moment/locale/pt-br";
 
+function rand() {
+  return Math.round(Math.random() * 20) - 10;
+}
+
+function getModalStyle() {
+  const top = 50 + rand();
+  const left = 50 + rand();
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`,
+  };
+}
+
 const useStyles = makeStyles((theme) => ({
   table: {
     minWidth: 650,
@@ -51,6 +68,14 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     borderRadius: 10,
   },
+  paperTwo: {
+    position: "absolute",
+    width: 400,
+    backgroundColor: theme.palette.background.paper,
+    border: "2px solid #000",
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(2, 4, 3),
+  },
   root: {
     "& > *": {
       margin: theme.spacing(1),
@@ -65,6 +90,7 @@ const useStyles = makeStyles((theme) => ({
     "& > * + *": {
       marginTop: theme.spacing(2),
     },
+    date: {},
   },
 }));
 
@@ -81,58 +107,23 @@ const unidades = [
     value: "UND",
     label: "UND",
   },
+  {
+    value: "SACO",
+    label: "SACO",
+  },
 ];
 
 export default function Vendas() {
-  const [descVenda, setDescVenda] = useState("");
-  const [dataVenda, setDataVenda] = useState("");
-  const [unidade, setUnidade] = useState("KG");
-  const [qtdVenda, setQtdVenda] = useState("");
-  const [valorVenda, setValorVenda] = useState("");
-  const [comprador, setComprador] = useState("");
-
-  const classes = useStyles();
-
-  function refreshPage(status) {
-    if (status === 200) {
-      alert("Venda inserida");
-      document.location.reload();
-    }
-  }
-
-  function saveVenda(){
-    if(descVenda === '' || dataVenda === '' || comprador === '' || qtdVenda === '' || valorVenda === '' || unidade === ''){
-      alert('Preencha todos os campos!')
-    }else{
-      postVenda(descVenda, dataVenda, comprador, qtdVenda, valorVenda, unidade, refreshPage)
-
-    }
-
-  }
-
-  const [open, setOpen] = React.useState(false);
-
-  const handleOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleChange = (event) => {
-    setUnidade(event.target.value);
-  };
-
   const [list, setList] = useState([]);
+
   const totalVendas = list.length;
 
   const valorT = [];
 
   const valorTotal = () => {
     let valor = 0;
-    for (let i = 0; i < list.length; i++) {
-      valor = list[i].valor * list[i].quantidade;
+    for (let i = list.length - 1; i >= 0; i--) {
+      valor = list[i].value * list[i].quantity;
       valorT.push(valor);
     }
   };
@@ -144,7 +135,6 @@ export default function Vendas() {
   valorTotal();
 
   const ganhoTotal = valorT.reduce((total, numero) => total + numero, 0);
-
   useEffect(() => {
     getVendas()
       .then((result) => {
@@ -153,50 +143,176 @@ export default function Vendas() {
       .catch();
   }, []);
 
+  function refreshPage(status, request) {
+    if (status === 200 && request === "adicionado") {
+      alert("Venda Inserida");
+      document.location.reload();
+    } else if (status === 200 && request === "deletado") {
+      alert("Venda Excluída");
+      document.location.reload();
+    } else if (status === 200 && request === "editado") {
+      alert("Venda Editada");
+      document.location.reload();
+    }
+  }
+
+  const [descVenda, setDescVenda] = useState("");
+  const [dataVenda, setDataVenda] = useState("");
+  const [unidade, setUnidade] = useState("KG");
+  const [qtdVenda, setQtdVenda] = useState("");
+  const [valorVenda, setValorVenda] = useState("");
+  const [comprador, setComprador] = useState("");
+
+  function saveVenda() {
+    if (
+      descVenda === "" ||
+      dataVenda === "" ||
+      comprador === "" ||
+      qtdVenda === "" ||
+      valorVenda === "" ||
+      unidade === ""
+    ) {
+      alert("Preencha todos os campos!");
+    } else {
+      postVenda(
+        descVenda,
+        new Date(dataVenda),
+        comprador,
+        qtdVenda,
+        valorVenda,
+        unidade,
+        refreshPage
+      );
+    }
+  }
+
+  const [open, setOpen] = React.useState(false);
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [modalStyle] = React.useState(getModalStyle);
+  const [openDel, setOpenDel] = React.useState(false);
+  const [idDel, setIdDel] = useState();
+
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleOpenEdit = () => {
+    setOpenEdit(true);
+  };
+
+  const handleCloseEdit = () => {
+    setOpenEdit(false);
+  };
+
+  const handleOpenDel = () => {
+    setOpenDel(true);
+  };
+
+  const handleCloseDel = () => {
+    setOpenDel(false);
+  };
+
+  const handleChange = (event) => {
+    setUnidade(event.target.value);
+  };
+
+  function ConfirmDelete(i) {
+    setIdDel(i);
+    handleOpenDel();
+  }
+
+  function ConfirmEdit(i) {
+    for (let cont = 0; cont < list.length; cont++) {
+      if (list[cont].id === i) {
+        setDescEdit(list[cont].description);
+        setDataEdit(list[cont].date);
+        setUniEdit(list[cont].unit);
+        setQtdEdit(list[cont].quantity);
+        setValorEdit(list[cont].value);
+        setCompradorEdit(list[cont].buyer);
+        setIdEdit(list[cont].id);
+      }
+    }
+
+    handleOpenEdit();
+  }
+
+  function EditarVenda() {
+    EditVenda(
+      descEdit,
+      new Date(dataEdit),
+      compradorEdit,
+      qtdEdit,
+      valorEdit,
+      uniEdit,
+      idEdit,
+      refreshPage
+    );
+  }
+
+  const [descEdit, setDescEdit] = useState("");
+  const [dataEdit, setDataEdit] = useState("");
+  const [uniEdit, setUniEdit] = useState("");
+  const [qtdEdit, setQtdEdit] = useState("");
+  const [valorEdit, setValorEdit] = useState("");
+  const [compradorEdit, setCompradorEdit] = useState("");
+  const [idEdit, setIdEdit] = useState("");
+
+  const classes = useStyles();
+
   return (
     <>
-      <div className="bg-white-500 pt-14 pb-28 px-3 md:px-8 h-auto">
-        <div className="container mx-auto max-w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-            <StatusCard
-              color="pink"
-              icon="trending_up"
-              title="Vendas Realizadas"
-              amount={`${totalVendas}`}
-              percentage="3.48 %"
-              percentageIcon="arrow_upward"
-              percentageColor="green"
-              date="Mês Passado"
-            />
-            <StatusCard
-              color="purple"
-              icon="paid"
-              title="Ganho Total"
-              // eslint-disable-next-line no-useless-concat
-              amount={"R$ " + `${ganhoTotal}`}
-              percentage="3.48"
-              percentageIcon="arrow_downward"
-              percentageColor="red"
-              date="Since last week"
-            />
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          flexWrap: "wrap",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          paddingLeft: "5%",
+          paddingRight: "5%",
+          marginTop: "3%",
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <StatusCard
+            color="pink"
+            icon="trending_up"
+            title="Vendas Realizadas"
+            amount={`${totalVendas}`}
+          //  percentage="3.48 %"
+           // percentageIcon="arrow_upward"
+           // percentageColor="green"
+            //date="Mês Passado"
+          />
+        </div>
 
-            <StatusCard
-              color="blue"
-              icon="poll"
-              title="Performance"
-              amount="49,65%"
-              percentage="12"
-              percentageIcon="arrow_upward"
-              percentageColor="green"
-              date="Since last month"
-            />
-          </div>
+        <div style={{ flex: 1 }}>
+          <StatusCard
+            color="purple"
+            icon="paid"
+            title="Ganho Total"
+            // eslint-disable-next-line no-useless-concat
+            amount={"R$ " + `${ganhoTotal}`}
+            //percentage="3.48"
+            //percentageIcon="arrow_downward"
+            //percentageColor="red"
+            //date="Since last week"
+          />
         </div>
       </div>
 
       <div className="px-3 md:px-8 h-auto -mt-24">
         <div className="container mx-auto max-w-full">
-          <div className="grid grid-cols-1 px-4 mb-16">
+          <div
+            style={{ marginTop: "10%" }}
+            className="grid grid-cols-1 px-4 mb-16"
+          >
             <TableCard title="Vendas" color={constantes.colors.primary}>
               <ButtonT
                 color={"teal"}
@@ -296,6 +412,7 @@ export default function Vendas() {
                           label="Valor Unidade"
                           style={{ width: "100%", marginBottom: 10 }}
                           onChange={(e) => setValorVenda(e.target.value)}
+                          helperText="Use o ponto invés da virgula!"
                         />
 
                         <TextField
@@ -331,6 +448,142 @@ export default function Vendas() {
                 </Fade>
               </Modal>
 
+              <Modal
+                aria-labelledby="transition-modal-title"
+                aria-describedby="transition-modal-description"
+                className={classes.modal}
+                open={openEdit}
+                onClose={handleCloseEdit}
+                closeAfterTransition
+                BackdropComponent={Backdrop}
+                BackdropProps={{
+                  timeout: 500,
+                }}
+              >
+                <Fade in={openEdit}>
+                  <div className={classes.paper}>
+                    <h2
+                      style={{
+                        fontSize: 30,
+                        fontFamily: "monospace",
+                        textAlign: "center",
+                        backgroundColor: "#287C43",
+                        color: "#fff",
+                        borderRadius: 10,
+                      }}
+                      id="transition-modal-title"
+                    >
+                      Editar Venda
+                    </h2>
+
+                    <form
+                      className={[classes.root]}
+                      noValidate
+                      autoComplete="off"
+                    >
+                      <div style={{ padding: 10 }}>
+                        <TextField
+                          id="standard-basic"
+                          label="Descrição"
+                          style={{ width: "100%", marginBottom: 10 }}
+                          onChange={(e) => setDescEdit(e.target.value)}
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          value={descEdit}
+                        />
+
+                        <TextField
+                          id="date"
+                          label="Data"
+                          type="date"
+                          style={{ width: "100%", marginBottom: 10 }}
+                          defaultValue={new Date()}
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          onChange={(e) => setDataEdit(e.target.value)}
+                          value={dataEdit}
+                        />
+
+                        <TextField
+                          id="standard-select-currency"
+                          select
+                          label="Unidade"
+                          value={uniEdit}
+                          onChange={handleChange}
+                          style={{
+                            width: "45%",
+                            marginRight: 32,
+                            marginBottom: 10,
+                          }}
+                        >
+                          {unidades.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
+                        <TextField
+                          id="standard-basic"
+                          label="Quantidade"
+                          style={{ width: "45%", marginBottom: 10 }}
+                          onChange={(e) => setQtdEdit(e.target.value)}
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          value={qtdEdit}
+                        />
+
+                        <TextField
+                          id="standard-basic"
+                          label="Valor Unidade"
+                          style={{ width: "100%", marginBottom: 10 }}
+                          onChange={(e) => setValorEdit(e.target.value)}
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          value={valorEdit}
+                        />
+
+                        <TextField
+                          id="standard-basic"
+                          label="Comprador"
+                          style={{ width: "100%", marginBottom: 10 }}
+                          onChange={(e) => setCompradorEdit(e.target.value)}
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          value={compradorEdit}
+                        />
+                      </div>
+                      <div style={{ marginRight: "12%", marginLeft: "12%" }}>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          className={classes.button}
+                          startIcon={<CancelIcon />}
+                          onClick={handleCloseEdit}
+                        >
+                          Cancelar
+                        </Button>
+
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          className={classes.button}
+                          endIcon={<SaveIcon />}
+                          onClick={EditarVenda}
+                        >
+                          Salvar
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </Fade>
+              </Modal>
+
               <TableContainer component={Paper}>
                 <Table
                   className={classes.table}
@@ -350,40 +603,45 @@ export default function Vendas() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {list.map((row, i) => (
-                      <TableRow key={row.id}>
-                        <TableCell align="center" component="th" scope="row">
-                          {row.descricao}
-                        </TableCell>
-                        <TableCell align="center">
-                          {moment(new Date(row.data))
-                            .locale("pt-br")
-                            .format("ddd, D [de] MMMM [de] YYYY")}
-                        </TableCell>
-                        <TableCell align="center">{row.comprador}</TableCell>
-                        <TableCell align="center">{row.quantidade}</TableCell>
-                        <TableCell align="center">{row.valor}</TableCell>
-                        <TableCell align="center">{row.unidade}</TableCell>
-                        <TableCell align="center">{getTotal(i)}</TableCell>
+                    {list
+                      .slice(0)
+                      .reverse()
+                      .map((row, i) => (
+                        <TableRow key={row.id}>
+                          <TableCell align="center" component="th" scope="row">
+                            {row.description}
+                          </TableCell>
+                          <TableCell align="center">
+                            {moment(new Date(row.date))
+                              .locale("pt-br")
+                              .format(`ddd, DD [de] MMMM [de] YYYY`)}
+                          </TableCell>
+                          <TableCell align="center">{row.buyer}</TableCell>
+                          <TableCell align="center">{row.quantity}</TableCell>
+                          <TableCell align="center">{row.value}</TableCell>
+                          <TableCell align="center">{row.unit}</TableCell>
+                          <TableCell align="center">{`R$ ${getTotal(i)}`}</TableCell>
 
-                        <TableCell align="center">
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            style={{ margin: "5px" }}
-                          >
-                            <CreateIcon />
-                          </Button>
-                          <Button
-                            style={{ margin: "5px" }}
-                            variant="contained"
-                            color="secondary"
-                          >
-                            <DeleteIcon />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          <TableCell align="center">
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              style={{ margin: "5px" }}
+                              onClick={() => ConfirmEdit(row.id)}
+                            >
+                              <CreateIcon />
+                            </Button>
+                            <Button
+                              style={{ margin: "5px" }}
+                              variant="contained"
+                              color="secondary"
+                              onClick={() => ConfirmDelete(row.id)}
+                            >
+                              <DeleteIcon />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -391,6 +649,46 @@ export default function Vendas() {
           </div>
         </div>
       </div>
+
+      <Modal
+        aria-labelledby="transition-modal-title"
+        aria-describedby="transition-modal-description"
+        className={classes.modal}
+        open={openDel}
+        onClose={handleCloseDel}
+        closeAfterTransition
+        BackdropComponent={Backdrop}
+        BackdropProps={{
+          timeout: 500,
+        }}
+      >
+        {/* </Modal> <Modal open={openDel} onClose={handleCloseDel}> */}
+        <div style={modalStyle} className={classes.paperTwo}>
+          <center>
+            <h1 style={{ fontSize: 25, margin: 15 }}>
+              Deseja Realmente Excluir?
+            </h1>
+
+            <Button
+              style={{ margin: "5px" }}
+              variant="contained"
+              color="secondary"
+              onClick={handleCloseDel}
+            >
+              NÃO
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              style={{ margin: "5px" }}
+              onClick={() => deleteVenda(idDel, refreshPage)}
+            >
+              SIM
+            </Button>
+          </center>
+        </div>
+      </Modal>
     </>
   );
 }

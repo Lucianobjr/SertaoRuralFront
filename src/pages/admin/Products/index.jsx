@@ -1,9 +1,13 @@
+/* eslint-disable no-unreachable */
 import StatusCard from "components/StatusCard";
 import TableCard from "components/TableCard";
 
+import "date-fns";
+
 import React, { useEffect, useState } from "react";
-import { deleteFornecedor, EditFornecedor,EditPhotoFornecedor, getFornecedores, postFornecedores } from "./services";
+import { getProdutos, getFornecedor, EditPhotoProduto, postProduto, EditProduto, deleteProduto } from "./services";
 import constantes from "constantes";
+import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 
 import DeleteIcon from "@material-ui/icons/Delete";
 import CreateIcon from "@material-ui/icons/Create";
@@ -26,9 +30,11 @@ import Fade from "@material-ui/core/Fade";
 import TextField from "@material-ui/core/TextField";
 import MenuItem from "@material-ui/core/MenuItem";
 
-import AddAPhotoIcon from '@material-ui/icons/AddAPhoto';
 import CancelIcon from "@material-ui/icons/Cancel";
 import SaveIcon from "@material-ui/icons/Save";
+
+import moment from "moment";
+import "moment/locale/pt-br";
 
 function rand() {
   return Math.round(Math.random() * 20) - 10;
@@ -80,45 +86,77 @@ const useStyles = makeStyles((theme) => ({
   button: {
     margin: theme.spacing(1),
   },
+  alerta: {
+    width: "100%",
+    "& > * + *": {
+      marginTop: theme.spacing(2),
+    },
+    date: {},
+  },
 }));
 
-/* const unidades = [
-  {
-    value: 'KG',
-    label: 'KG',
-  },
-  {
-    value: 'CAIXA',
-    label: 'CX',
-  },
-  {
-    value: 'UND',
-    label: 'UND',
-  },
-]; */
 
-export default function Fornecedores() {
+
+ const categorias = [
+  {
+    value: "Adubos",
+    label: "Adubos",
+  },
+  {
+    value: "Fertilizantes",
+    label: "Fertilizantes",
+  },
+  {
+    value: "Acessorios",
+    label: "Acessórios",
+  },
+]; 
+
+export default function Produtos() {
   const [list, setList] = useState([]);
+  const [fornecedores, setFornecedores] = useState([]);
 
-  const totalFornecedores = list.length;
+  const totalProdutos = list.length;
 
   useEffect(() => {
-    getFornecedores()
+    getProdutos()
       .then((result) => {
         setList(result);
       })
       .catch();
   }, []);
 
+  useEffect(() => {
+    getFornecedor()
+      .then((result) => {
+        setFornecedores(result);
+      })
+      .catch();
+  }, []);
+
+ // useEffect(()=>{units()}, [])
+
+function units(){
+  const fornecedoresList = [];
+  for(let i = 0; i < fornecedores.length; i++){
+    fornecedoresList.push( 
+    
+      {value: fornecedores[i].id,
+      label: fornecedores[i].name,}
+    )
+  }
+  return fornecedoresList;
+}
+
   function refreshPage(status, request) {
     if (status === 200 && request === "adicionado") {
-      alert("Fornecedor Inserido");
+      alert("Produto Inserido");
       document.location.reload();
     } else if (status === 200 && request === "deletado") {
-      alert("Fornecedor Excluído");
+      alert("Produto Excluído");
       document.location.reload();
     } else if (status === 200 && request === "editado") {
-      alert("Fornecedor Editado");
+      alert("Produto Editado");
       document.location.reload();
     }else if (status === 200 && request === "photo") {
       alert("Foto Editada");
@@ -126,45 +164,33 @@ export default function Fornecedores() {
     }
   }
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("KG");
-  const [cnpj, setCnpj] = useState("");
-  const [description, setDescription] = useState("");
-  const [street, setStreet] = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
-  const [city, setCity] = useState("KG");
-  const [cep, setCep] = useState("");
-  const [url, setUrl] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [descProduto, setDescProduto] = useState("");
+  const [nameProduto, setNameProduto] = useState("");
+  const [categoryProduto, setCategoryProduto] = useState("Adubos");
+  const [supplierProduto, setSupplierProduto] = useState();
+  const [valueProduto, setValueProduto] = useState("");
+  const [unitProduto, setUnitProduto] = useState("");
+  const [photoProduto, setPhotoProduto] = useState(null);
 
   function saveFornecedor() {
     if (
-      name === "" ||
-      email === "" ||
-      phone === "" ||
-      cnpj === "" ||
-      description === "" ||
-      street === "" ||
-      neighborhood === "" ||
-      city === "" ||
-      cep === "" ||
-      url === "" 
+      descProduto === "" ||
+      nameProduto === "" ||
+      categoryProduto === "" ||
+      supplierProduto === "" ||
+      valueProduto === "" ||
+      unitProduto === "" 
     ) {
       alert("Preencha todos os campos!");
     } else {
-      postFornecedores(
-        name,
-        email,
-        phone,
-        cnpj,
-        description,
-        street,
-        neighborhood,
-        city,
-        cep,
-        url,
-        selectedFile,
+      postProduto(
+        supplierProduto,
+        descProduto,
+        valueProduto,
+        unitProduto,
+        categoryProduto,
+        nameProduto,
+        photoProduto,
         refreshPage
       );
     }
@@ -209,6 +235,20 @@ export default function Fornecedores() {
     setOpenDel(false);
   };
 
+  const handleChangeCategory = (event) => {
+    setCategoryProduto(event.target.value);
+  };
+  const handleChangeSupplier = (event) => {
+    setSupplierProduto(event.target.value);
+  };
+
+  const handleChangeCategoryEdit = (event) => {
+    setCategoryProdutoEdit(event.target.value);
+  };
+  const handleChangeSupplierEdit = (event) => {
+    setSupplierProdutoEdit(event.target.value);
+  };
+
   function ConfirmDelete(i) {
     setIdDel(i);
     handleOpenDel();
@@ -221,60 +261,46 @@ export default function Fornecedores() {
 
   function ConfirmEdit(i) {
     for (let cont = 0; cont < list.length; cont++) {
-
       if (list[cont].id === i) {
-        setNameEdit(list[cont].name);
-        setEmailEdit(list[cont].email);
-        setPhoneEdit(list[cont].phone);
-        setCnpjEdit(list[cont].cnpj);
-        setDescriptionEdit(list[cont].description);
-        setStreetEdit(list[cont].street);
-        setNeighborhoodEdit(list[cont].neighborhood);
-        setCityEdit(list[cont].city);
-        setCepEdit(list[cont].cep);
-        setUrlEdit(list[cont].url);
+        setDescProdutoEdit(list[cont].description);
+        setNameProdutoEdit(list[cont].name);
+        setCategoryProdutoEdit(list[cont].category);
+        setSupplierProdutoEdit(list[cont].supplier);
+        setValueProdutoEdit(list[cont].value);
+        setUnitProdutoEdit(list[cont].unit);
         setIdEdit(list[cont].id);
-
       }
     }
 
     handleOpenEdit();
   }
 
-  function EditarFornecedor() {
-    EditFornecedor(
-      nameEdit,
-      emailEdit,
-      phoneEdit,
-      cnpjEdit,
-      descriptionEdit,
-      streetEdit,
-      neighborhoodEdit,
-      cityEdit,
-      cepEdit,
-      urlEdit,
+  function EditarProduto() {
+    EditProduto(
+      supplierProdutoEdit,
+      descProdutoEdit,
+      valueProdutoEdit,
+      unitProdutoEdit,
+      categoryProdutoEdit,
+      nameProdutoEdit,
       idEdit,
       refreshPage
     );
   }
 
-  const [nameEdit, setNameEdit] = useState("");
-  const [emailEdit, setEmailEdit] = useState("");
-  const [phoneEdit, setPhoneEdit] = useState("");
-  const [cnpjEdit, setCnpjEdit] = useState("");
-  const [descriptionEdit, setDescriptionEdit] = useState("");
-  const [streetEdit, setStreetEdit] = useState("");
-  const [neighborhoodEdit, setNeighborhoodEdit] = useState("");
-  const [cityEdit, setCityEdit] = useState("");
-  const [cepEdit, setCepEdit] = useState("");
-  const [urlEdit, setUrlEdit] = useState("");
+  const [descProdutoEdit, setDescProdutoEdit] = useState("");
+  const [nameProdutoEdit, setNameProdutoEdit] = useState("");
+  const [categoryProdutoEdit, setCategoryProdutoEdit] = useState("");
+  const [supplierProdutoEdit, setSupplierProdutoEdit] = useState();
+  const [valueProdutoEdit, setValueProdutoEdit] = useState("");
+  const [unitProdutoEdit, setUnitProdutoEdit] = useState("");
   const [idEdit, setIdEdit] = useState("");
 
   const [photoProdutoEdit, setPhotoProdutoEdit] = useState(null);
   const [idEditPhoto, setIdEditPhoto] = useState("");
 
-  function EditarPhotoFornecedor() {
-    EditPhotoFornecedor(
+  function EditarPhotoProduto() {
+    EditPhotoProduto(
       photoProdutoEdit,
       idEditPhoto,
       refreshPage
@@ -285,6 +311,7 @@ export default function Fornecedores() {
 
   return (
     <>
+    <div className="container mx-auto max-w-full"></div>
       <div
         style={{
           display: "flex",
@@ -302,20 +329,23 @@ export default function Fornecedores() {
           <StatusCard
             color="pink"
             icon="trending_up"
-            title="Fornecedores"
-            amount={`${totalFornecedores}`}
-            //  percentage="3.48 %"
-            // percentageIcon="arrow_upward"
-            // percentageColor="green"
+            title="Total de Produtos"
+            amount={totalProdutos}
+          //  percentage="3.48 %"
+           // percentageIcon="arrow_upward"
+           // percentageColor="green"
             //date="Mês Passado"
           />
         </div>
-      </div>
 
-      <div style={{ marginTop: "3%" }} className="px-3 md:px-8 h-auto -mt-24">
+        </div>
+      <div className="px-3 md:px-8 h-auto -mt-24">
         <div className="container mx-auto max-w-full">
-          <div className="grid grid-cols-1 px-4 mb-16">
-            <TableCard title="Fornecedores" color={constantes.colors.primary}>
+          <div
+            style={{ marginTop: "10%" }}
+            className="grid grid-cols-1 px-4 mb-16"
+          >
+            <TableCard title="Produtos" color={constantes.colors.primary}>
               <ButtonT
                 color={"teal"}
                 buttonType="filled"
@@ -327,7 +357,7 @@ export default function Fornecedores() {
                 ripple="light"
                 onClick={handleOpen}
               >
-                Novo Fornecedor
+                Adicionar Produto
               </ButtonT>
 
               <Modal
@@ -355,7 +385,7 @@ export default function Fornecedores() {
                       }}
                       id="transition-modal-title"
                     >
-                      Novo Fornecedor
+                      Novo Produto
                     </h2>
 
                     <form
@@ -364,113 +394,86 @@ export default function Fornecedores() {
                       autoComplete="off"
                     >
                       <div style={{ padding: 10 }}>
-                      <TextField
+                        <TextField
                           id="standard-basic"
-                          label="Logo"
-                          type='file'
+                          label="Nome"
+                          style={{ width: "45%", marginRight: '10%', marginBottom: 10 }}
+                          onChange={(e) => setNameProduto(e.target.value)}
+                        />
+
+                          <TextField
+                          id="standard-select-currency"
+                          select
+                          label="Categoria"
+                          value={categoryProduto}
+                          onChange={handleChangeCategory}
+                          style={{
+                            width: "45%",
+                
+                            marginBottom: 10,
+                          }}
+                        >
+                          {categorias.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
+
+
+                         <TextField
+                          id="standard-basic"
+                          label="Descrição"
+                          style={{ width: "100%", marginBottom: 10 }}
+                          onChange={(e) => setDescProduto(e.target.value)}
+                        />
+
+                    
+                        <TextField
+                          id="standard-select-currency"
+                          select
+                          label="Fornecedor"
+                          value={supplierProduto}
+                          onChange={handleChangeSupplier}
+                          style={{
+                            width: "45%",
+                            marginRight: 32,
+                            marginBottom: 10,
+                          }}
+                        >
+                          {units().map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
+                        <TextField
+                          id="standard-basic"
+                          label="Unidade"
+                          style={{ width: "45%", marginBottom: 10 }}
+                          onChange={(e) => setUnitProduto(e.target.value)}
+                        />
+
+                        <TextField
+                          id="standard-basic"
+                          label="Valor do Produto"
+                          style={{ width: "50%", marginBottom: 10 }}
+                          onChange={(e) => setValueProduto(e.target.value)}
+                          helperText="Use o ponto invés da virgula!"
+                        />
+
+                        <TextField
+                          id="standard-basic"
+                          label="Foto do Produto"
+                          type="file"
                           InputLabelProps={{
                             shrink: true,
                           }}
                           style={{ width: "100%", marginBottom: 10 }}
-                          onChange={(e) => setSelectedFile(e.target.files[0])}
+                          onChange={(e) => setPhotoProduto(e.target.files[0])}
                         />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Nome"
-                          style={{ width: "100%", marginBottom: 10 }}
-                          onChange={(e) => setName(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Email"
-                          type="e-mail"
-                          style={{ width: "100%", marginBottom: 10 }}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Telefone"
-                          style={{
-                            width: "45%",
-                            marginRight: "10%",
-                            marginBottom: 10,
-                          }}
-                          onChange={(e) => setPhone(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="CNPJ"
-                          style={{ width: "45%", marginBottom: 10 }}
-                          onChange={(e) => setCnpj(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Descrição"
-                          style={{ width: "100%", marginBottom: 10 }}
-                          onChange={(e) => setDescription(e.target.value)}
-                        />
-                        <TextField
-                          id="standard-basic"
-                          label="Endereço"
-                          style={{ width: "100%", marginBottom: 10 }}
-                          onChange={(e) => setStreet(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Cidade"
-                          style={{
-                            width: "45%",
-                            marginRight: "10%",
-                            marginBottom: 10,
-                          }}
-                          onChange={(e) => setCity(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Estado"
-                          style={{ width: "45%", marginBottom: 10 }}
-                          onChange={(e) => setNeighborhood(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="CEP"
-                          style={{
-                            width: "45%",
-                            marginRight: "10%",
-                            marginBottom: 10,
-                          }}
-                          onChange={(e) => setCep(e.target.value)}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Site"
-                          style={{ width: "45%", marginBottom: 10 }}
-                          onChange={(e) => setUrl(e.target.value)}
-                        />
-
-                        {/*       <TextField
-                        id="standard-select-currency"
-                        select
-                        label="Unidade"
-                        value={unidade}
-                        onChange={handleChange}
-                        style={{width: '45%',marginRight: 32, marginBottom: 10}} 
-                      >
-                        {unidades.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </TextField> */}
                       </div>
                       <div style={{ marginRight: "12%", marginLeft: "12%" }}>
                         <Button
@@ -482,6 +485,7 @@ export default function Fornecedores() {
                         >
                           Cancelar
                         </Button>
+
                         <Button
                           variant="contained"
                           color="primary"
@@ -522,7 +526,7 @@ export default function Fornecedores() {
                       }}
                       id="transition-modal-title"
                     >
-                      Editar Fornecedor
+                      Editar Produto
                     </h2>
 
                     <form
@@ -531,143 +535,99 @@ export default function Fornecedores() {
                       autoComplete="off"
                     >
                       <div style={{ padding: 10 }}>
-                        
                         <TextField
                           id="standard-basic"
                           label="Nome"
-                          style={{ width: "100%", marginBottom: 10 }}
+                          style={{ width: "45%", marginRight: '10%', marginBottom: 10 }}
                           InputLabelProps={{
                             shrink: true,
                           }}
-                          onChange={(e) => setNameEdit(e.target.value)}
-                          value={nameEdit}
+                          onChange={(e) => setNameProdutoEdit(e.target.value)}
+                          value={nameProdutoEdit}
                         />
 
-                        <TextField
-                          id="standard-basic"
-                          label="Email"
-                          type="e-mail"
-                          style={{ width: "100%", marginBottom: 10 }}
+                          <TextField
+                          id="standard-select-currency"
+                          select
+                          label="Categoria"
+                          value={categoryProdutoEdit}
+                          onChange={handleChangeCategoryEdit}
                           InputLabelProps={{
                             shrink: true,
                           }}
-                          onChange={(e) => setEmailEdit(e.target.value)}
-                          value={emailEdit}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Telefone"
                           style={{
                             width: "45%",
-                            marginRight: "10%",
+                
                             marginBottom: 10,
                           }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          onChange={(e) => setPhoneEdit(e.target.value)}
-                          value={phoneEdit}
-                        />
+                        >
+                          {categorias.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
 
-                        <TextField
-                          id="standard-basic"
-                          label="CNPJ"
-                          style={{ width: "45%", marginBottom: 10 }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          onChange={(e) => setCnpjEdit(e.target.value)}
-                          value={cnpjEdit}
-                        />
 
-                        <TextField
+
+                         <TextField
                           id="standard-basic"
                           label="Descrição"
                           style={{ width: "100%", marginBottom: 10 }}
                           InputLabelProps={{
                             shrink: true,
                           }}
-                          onChange={(e) => setDescriptionEdit(e.target.value)}
-                          value={descriptionEdit}
+                          onChange={(e) => setDescProdutoEdit(e.target.value)}
+                          value={descProdutoEdit}
                         />
+
+                    
                         <TextField
-                          id="standard-basic"
-                          label="Endereço"
-                          style={{ width: "100%", marginBottom: 10 }}
+                          id="standard-select-currency"
+                          select
+                          label="Fornecedor"
+                          value={supplierProdutoEdit}
+                          onChange={handleChangeSupplierEdit}
                           InputLabelProps={{
                             shrink: true,
                           }}
-                          onChange={(e) => setStreetEdit(e.target.value)}
-                          value={streetEdit}
-                        />
-
-                        <TextField
-                          id="standard-basic"
-                          label="Cidade"
                           style={{
                             width: "45%",
-                            marginRight: "10%",
+                            marginRight: 32,
                             marginBottom: 10,
                           }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          onChange={(e) => setCityEdit(e.target.value)}
-                          value={cityEdit}
-                        />
+                        >
+                          {units().map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
 
                         <TextField
                           id="standard-basic"
-                          label="Estado"
+                          label="Unidade"
                           style={{ width: "45%", marginBottom: 10 }}
                           InputLabelProps={{
                             shrink: true,
                           }}
-                          onChange={(e) => setNeighborhoodEdit(e.target.value)}
-                          value={neighborhoodEdit}
+                          onChange={(e) => setUnitProdutoEdit(e.target.value)}
+                          value={unitProdutoEdit}
                         />
 
                         <TextField
                           id="standard-basic"
-                          label="CEP"
-                          style={{
-                            width: "45%",
-                            marginRight: "10%",
-                            marginBottom: 10,
-                          }}
+                          label="Valor do Produto"
+                          style={{ width: "50%", marginBottom: 10 }}
                           InputLabelProps={{
                             shrink: true,
                           }}
-                          onChange={(e) => setCepEdit(e.target.value)}
-                          value={cepEdit}
+                          onChange={(e) => setValueProdutoEdit(e.target.value)}
+                          value={valueProdutoEdit}
+                          helperText="Use o ponto invés da virgula!"
                         />
 
-                        <TextField
-                          id="standard-basic"
-                          label="Site"
-                          style={{ width: "45%", marginBottom: 10 }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          onChange={(e) => setUrlEdit(e.target.value)}
-                          value={urlEdit}
-                        />
-
-                        {/*       <TextField
-                        id="standard-select-currency"
-                        select
-                        label="Unidade"
-                        value={unidade}
-                        onChange={handleChange}
-                        style={{width: '45%',marginRight: 32, marginBottom: 10}} 
-                      >
-                        {unidades.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </TextField> */}
+                      
                       </div>
                       <div style={{ marginRight: "12%", marginLeft: "12%" }}>
                         <Button
@@ -679,12 +639,13 @@ export default function Fornecedores() {
                         >
                           Cancelar
                         </Button>
+
                         <Button
                           variant="contained"
                           color="primary"
                           className={classes.button}
                           endIcon={<SaveIcon />}
-                          onClick={EditarFornecedor}
+                          onClick={EditarProduto}
                         >
                           Salvar
                         </Button>
@@ -693,6 +654,7 @@ export default function Fornecedores() {
                   </div>
                 </Fade>
               </Modal>
+
               
               <Modal
                 aria-labelledby="transition-modal-title"
@@ -756,7 +718,7 @@ export default function Fornecedores() {
                           color="primary"
                           className={classes.button}
                           endIcon={<SaveIcon />}
-                          onClick={EditarPhotoFornecedor}
+                          onClick={EditarPhotoProduto}
                         >
                           Salvar
                         </Button>
@@ -765,9 +727,9 @@ export default function Fornecedores() {
                   </div>
                 </Fade>
               </Modal>
-              
-              
-              
+
+
+
               <TableContainer component={Paper}>
                 <Table
                   className={classes.table}
@@ -776,58 +738,69 @@ export default function Fornecedores() {
                 >
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">ID</TableCell>
-                      <TableCell align="center">NOME</TableCell>
-                      <TableCell align="center">CNPJ</TableCell>
-                      <TableCell align="center">TELEFONE</TableCell>
-                      <TableCell align="center">EMAIL</TableCell>
-                      <TableCell align="center">LOCALIDADE</TableCell>
-                      <TableCell align="center">SITE</TableCell>
-                      <TableCell align="center">OPÇÕES</TableCell>
+                      <TableCell align="center">Fornecedor</TableCell>
+                      <TableCell align="center">Categoria</TableCell>
+                      <TableCell align="center">Nome</TableCell>
+                      <TableCell align="center">Descrição</TableCell>
+                      <TableCell align="center">Unidade</TableCell>
+                      <TableCell align="center">Valor</TableCell>
+                      <TableCell align="center">Opções</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {list.slice(0)
-                      .reverse().map((row, i) => (
-                      <TableRow key={row.id}>
-                        <TableCell align="center" component="th" scope="row">
-                          {row.id}
-                        </TableCell>
-                        <TableCell align="center">{row.name}</TableCell>
-                        <TableCell align="center">{row.cnpj}</TableCell>
-                        <TableCell align="center">{row.phone}</TableCell>
-                        <TableCell align="center">{row.email}</TableCell>
-                        <TableCell align="center">{`${row.city}, ${row.neighborhood}`}</TableCell>
-                        <TableCell align="center">{row.url}</TableCell>
+                    {list
+                      .slice(0)
+                      .reverse()
+                      .map((row, i) => (
+                        <TableRow key={row.id}>
 
-                        <TableCell align="center">
-                        <Button
+                          <TableCell align="center" component="th" scope="row">
+
+                            {
+
+                            fornecedores.map((forn) => {
+                              return forn.id === row.supplier ? forn.name : ''
+                            })
+                            
+                            }
+
+                          </TableCell>
+                          
+                          <TableCell align="center">{row.category}</TableCell>
+                          <TableCell align="center">{row.name}</TableCell>
+                          <TableCell align="center">{row.description}</TableCell>
+                          <TableCell align="center">{row.unit}</TableCell>
+                          <TableCell align="center">{row.value}</TableCell>
+
+                          <TableCell align="center">
+                          <Button
                             variant="contained"
                             color="primary"
                             style={{ margin: "5px" }}
                             onClick={() => ConfirmEditPhoto(row.id)}
                           >
-                            <AddAPhotoIcon />
+                            <PhotoCameraIcon />
+                            
                           </Button>
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            style={{ margin: "5px" }}
-                            onClick={() => ConfirmEdit(row.id)}
-                          >
-                            <CreateIcon />
-                          </Button>
-                          <Button
-                            style={{ margin: "5px" }}
-                            variant="contained"
-                            color="secondary"
-                            onClick={() => ConfirmDelete(row.id)}
-                          >
-                            <DeleteIcon />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              style={{ margin: "5px" }}
+                              onClick={() => ConfirmEdit(row.id)}
+                            >
+                              <CreateIcon />
+                            </Button>
+                            <Button
+                              style={{ margin: "5px" }}
+                              variant="contained"
+                              color="secondary"
+                              onClick={() => ConfirmDelete(row.id)}
+                            >
+                              <DeleteIcon />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -868,14 +841,13 @@ export default function Fornecedores() {
               variant="contained"
               color="primary"
               style={{ margin: "5px" }}
-              onClick={() => deleteFornecedor(idDel, refreshPage)}
+              onClick={() => deleteProduto(idDel, refreshPage)}
             >
               SIM
             </Button>
           </center>
         </div>
       </Modal>
-
     </>
   );
 }

@@ -9,8 +9,9 @@ import Despesas from '../pages/user/Despesas/index';
 import Funcionarios from '../pages/user/Funcionarios/index';
 //import Plantacoes from '../pages/user/Plantacoes';
 import Insumos from '../pages/user/Insumos/index';
-import Settings from '../pages/user/User/index'
+import Settings from '../pages/user/Profile/index';
 import Produtos from '../pages/user/Produtos/index';
+import Plantacoes from '../pages/user/Plantacoes/index';
 
 // Tailwind CSS Style Sheet
 import "../assets/styles/tailwind.css";
@@ -18,7 +19,7 @@ import "../assets/styles/tailwind.css";
 function User() {
   return (
     <>
-      <Sidebar />
+      <Sidebar/>
       <div className="md:ml-64">
         <Switch>
           <Route exact path="/" component={Dashboard} />
@@ -27,7 +28,8 @@ function User() {
           <Route exact path="/funcionarios" component={Funcionarios} />
           <Route exact path="/insumos" component={Insumos} />
           <Route exact path="/produtos" component={Produtos} />
-          <Route exact path="/perfil" component={Settings} />
+          <Route exact path="/plantacoes" component={Plantacoes} />
+          <Route exact path="/profile" component={Settings} />
           <Redirect from="*" to="/" />
         </Switch>
         

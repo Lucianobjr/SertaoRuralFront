@@ -40,7 +40,7 @@ export default function DefaultNavbar() {
                                 ripple="light"
                             >
                                 <Icon name="description" size="2xl" />
-                                &nbsp;Resgitre-se
+                                &nbsp;Registre-se
                             </NavLink>
                             
                             <a

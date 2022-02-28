@@ -1,53 +1,61 @@
-import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Card from '@material-ui/core/Card';
-import CardActionArea from '@material-ui/core/CardActionArea';
-import CardActions from '@material-ui/core/CardActions';
-import CardContent from '@material-ui/core/CardContent';
-import CardMedia from '@material-ui/core/CardMedia';
-import Typography from '@material-ui/core/Typography';
+import React from "react";
+import { makeStyles } from "@material-ui/core/styles";
+import Card from "@material-ui/core/Card";
+import CardActionArea from "@material-ui/core/CardActionArea";
+import CardActions from "@material-ui/core/CardActions";
+import CardContent from "@material-ui/core/CardContent";
+import CardMedia from "@material-ui/core/CardMedia";
+import Typography from "@material-ui/core/Typography";
+import { SERVER } from '../api';
+import Image from "@material-tailwind/react/Image";
 
-import clsx from 'clsx';
-import prod from '../assets/img/map.jpg'
-import loja from '../assets/img/loja.png'
-import Collapse from '@material-ui/core/Collapse';
+import clsx from "clsx";
+//import prod from "../assets/img/map.jpg";
+//import loja from "../assets/img/loja.png";
+import Collapse from "@material-ui/core/Collapse";
 
-import IconButton from '@material-ui/core/IconButton';
-import { red } from '@material-ui/core/colors';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import IconButton from "@material-ui/core/IconButton";
+import { red } from "@material-ui/core/colors";
+import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
+
 
 const useStyles = makeStyles((theme) => ({
   root: {
     maxWidth: 345,
-    margin: '5%',
+    minWidth: 300,
+    margin: "2%",
+    flex: 1,
   },
- 
+
   media: {
     height: 0,
-    paddingTop: '100%', // 16:9
+    paddingTop: "100%", // 16:9
   },
   submedia: {
     height: 0,
-    paddingTop: '40%', // 16:9
+    paddingTop: "40%", // 16:9
   },
- 
+
   expand: {
-    transform: 'rotate(0deg)',
-    marginLeft: 'auto',
-    transition: theme.transitions.create('transform', {
+    transform: "rotate(0deg)",
+    marginLeft: "auto",
+    transition: theme.transitions.create("transform", {
       duration: theme.transitions.duration.shortest,
     }),
   },
   expandOpen: {
-    transform: 'rotate(180deg)',
+    transform: "rotate(180deg)",
   },
   avatar: {
     backgroundColor: red[500],
   },
-
 }));
 
-export default function MediaCard() {
+const MediaCard = (props) => {
+
+const imagem =  `${SERVER}/${props.photo}`;
+
+const foto = props.photo === null ? "https://images.tcdn.com.br/img/img_prod/696987/fosfato_monoamonico_map_dripsol_sqm_sc_25kg_263_1_20191116163351.jpg" : imagem
   const classes = useStyles();
 
   const [expanded, setExpanded] = React.useState(false);
@@ -56,26 +64,27 @@ export default function MediaCard() {
     setExpanded(!expanded);
   };
 
+
   return (
     <Card className={classes.root}>
       <CardActionArea>
-        <CardMedia
-          className={classes.media}
-          image={prod}
-          title="Contemplative Reptile"
-        />
+       
+
+         <Image src={foto} />
+         
+
         <CardContent>
           <Typography gutterBottom variant="h5" component="h2">
-            Dripsol Map
+            {props.name}
           </Typography>
           <Typography variant="body2" color="textSecondary" component="p">
-            Lizards are a widespread group of squamate reptiles, with over 6,000 species, ranging
-            across all continents except Antarctica
+            {props.category}
           </Typography>
         </CardContent>
       </CardActionArea>
       <CardActions disableSpacing>
-        Contato
+        <div>Detalhes: </div>
+
         <IconButton
           className={clsx(classes.expand, {
             [classes.expandOpen]: expanded,
@@ -89,14 +98,19 @@ export default function MediaCard() {
       </CardActions>
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <CardContent>
-          <Typography paragraph>Vendedor:</Typography>
-          <CardMedia
-          className={classes.submedia}
-          image={loja}
-          title="Contemplative Reptile"
-        />
+          <Typography paragraph>
+            <b>Valor:</b> R$ {props.value}
+          </Typography>
+          <Typography paragraph>
+            <b>Unidade:</b> {props.unit}
+          </Typography>
+          <Typography paragraph>
+            <b>Detalhes:</b> {props.describe}
+          </Typography>
         </CardContent>
       </Collapse>
     </Card>
   );
-}
+};
+
+export default MediaCard;

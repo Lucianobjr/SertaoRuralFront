@@ -1,61 +1,77 @@
+import React, {useState, useEffect} from "react";
+
 import Card from '@material-tailwind/react/Card';
-import CardBody from '@material-tailwind/react/CardBody';
-import CardFooter from '@material-tailwind/react/CardFooter';
 import Image from '@material-tailwind/react/Image';
 import H5 from '@material-tailwind/react/Heading5';
 import Icon from '@material-tailwind/react/Icon';
-import LeadText from '@material-tailwind/react/LeadText';
 import Button from '@material-tailwind/react/Button';
 import ProfilePicture from 'assets/img/team-1-800x800.jpg';
 
-export default function ProfileCard() {
+import api, { TOKEN_KEY, ID } from "../api";
+
+
+async function getUser(){
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  const id = localStorage.getItem(ID);
+
+  const res = (
+    await api.get(`/users/${id}`, {
+      headers: { Authorization: `token ${token}` },
+    })
+  ).data.response;
+  return res;
+}
+
+
+export default function ProfileCard(props) {
+
+    const [nameProfile, setNameProfile] = useState('');
+    const [surnameProfile, setSurnameProfile] = useState('');
+    const [neighborhoodProfile, setNeighborhoodProfile] = useState('');
+    const [cityProfile, setCityProfile] = useState('');
+
+    const Perfil = props.photo === "" ? "https://cdn.pixabay.com/photo/2018/08/28/13/29/avatar-3637561_960_720.png" : props.photo
+
+    useEffect(() => {
+        getUser()
+          .then((result) => {
+            setNameProfile(result[0].name);
+            setSurnameProfile(result[0].surname);
+            setNeighborhoodProfile(result[0].neighborhood)
+            setCityProfile(result[0].city)
+          })
+          .catch();
+      }, []);
+
     return (
         <Card>
             <div className="flex flex-wrap justify-center">
                 <div className="w-48 px-4 -mt-24">
-                    <Image src={ProfilePicture} rounded raised />
+                    <Image src={Perfil} rounded raised />
                 </div>
             </div>
-
-            <div style={{marginTop: 10}} className="text-center">
-                <H5 color="gray">John Smith</H5>
-                <div className="mt-0 mb-2 text-gray-700 flex items-center justify-center gap-2">
-                    <Icon name="place" size="xl" />
-                    Los Angeles, California
-                </div>
-                <div className="mb-2 text-gray-700 mt-10 flex items-center justify-center gap-2">
-                    <Icon name="work" size="xl" />
-                    Solution Manager - Creative Tim Officer
-                </div>
-                <div className="mb-2 text-gray-700 flex items-center justify-center gap-2">
-                    <Icon name="account_balance" size="xl" />
-                    University of Computer Science
-                </div>
-            </div>
-            <CardBody>
-                <div className="border-t border-lightBlue-200 text-center px-2 ">
-                    <LeadText color="blueGray">
-                        An artist of considerable range, Jenna the name taken by
-                        Melbourne-raised, Brooklyn-based Nick Murphy writes,
-                        performs and records all of his own music, giving it a
-                        warm, intimate feel with a solid groove structure. An
-                        artist of considerable range.
-                    </LeadText>
-                </div>
-            </CardBody>
-            <CardFooter>
-                <div className="w-full flex justify-center -mt-8">
+           
+                <div style= {{marginTop: '1px'}} className="w-full flex justify-center -mt-8">
                     <a
                         href="#pablo"
                         className="mt-5"
                         onClick={(e) => e.preventDefault()}
                     >
-                        <Button color="purple" buttonType="link" ripple="dark">
-                            Show more
+                        <Button color="green" buttonType="link" ripple="dark">
+                            Trocar foto do Perfil
                         </Button>
                     </a>
                 </div>
-            </CardFooter>
+
+            <div style={{marginTop: 10}} className="text-center">
+                <H5 color="gray">{`${nameProfile} ${surnameProfile}`}</H5>
+                <div className="mt-0 mb-2 text-gray-700 flex items-center justify-center gap-2">
+                    <Icon name="place" size="xl" />
+                    {`${cityProfile}, ${neighborhoodProfile}`}
+                </div>
+            </div>
+           
+          
         </Card>
     );
 }

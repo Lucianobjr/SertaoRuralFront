@@ -1,42 +1,25 @@
-import api, { TOKEN_KEY, ID } from "../../../api";
+import api, { TOKEN_KEY, IDPRODUTO } from "../../../api";
 
 const token = sessionStorage.getItem(TOKEN_KEY);
-const id = localStorage.getItem(ID);
+const id = localStorage.getItem(IDPRODUTO);
 
-export async function getInsumos(){
+export async function getProdutos(){
     
-    const res = (await api.get(`/insumos/${id}`, { 
+    const res = (await api.get(`/products/`, { 
       headers: { Authorization: `token ${token}`}},
       )).data.response;
     return res;
 }
 
-export async function postDespesa(
-  desc,
-  date,
-  valor,
-  status,
-  refreshPage
-) {
-  await api
-    .post(
-      `/despesas`,
-      {
-        usuario: localStorage.getItem(ID),
-        descricao: desc,
-        data: date,
-        valor: valor,
-        paga: status,
-        frequencia: "Recorrente",
-      },
-      {
-        headers: { Authorization: `token ${token}` },
-      }
-    )
-    .then(() => {
-      refreshPage(200);
-    });
+export async function getFornecedores(){
+    
+  const res = (await api.get(`/suppliers`, { 
+    headers: { Authorization: `token ${token}`}},
+    )).data.response;
+  return res;
 }
+
+
 
 
 
